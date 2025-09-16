@@ -477,6 +477,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by Kalpi Capital**
+**Built with ❤️ for Kalpi Capital**
 
 *Real-time financial data pipeline for modern trading systems*
