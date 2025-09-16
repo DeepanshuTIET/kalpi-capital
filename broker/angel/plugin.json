@@ -1,8 +1,6 @@
 {
     "Plugin Name": "angel",
-    "Plugin URI": "https://openalgo.in",
-    "Description": "AngelOne OpenAlgo Plugin",
+    "Description": "AngelOne Plugin",
     "Version": "1.0",
-    "Author": "Rajandran R",
-    "Author URI": "https://openalgo.in"
+    "Author": "Deepanshu Goyal"
 }
