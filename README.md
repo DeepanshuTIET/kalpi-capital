@@ -6,6 +6,7 @@ A high-performance real-time financial data pipeline with Angel Broking integrat
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.116+-green.svg)](https://fastapi.tiangolo.com)
 [![DuckDB](https://img.shields.io/badge/DuckDB-1.3+-yellow.svg)](https://duckdb.org)
 [![License](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
+[![GitHub](https://img.shields.io/badge/GitHub-Repository-black.svg)](https://github.com/DeepanshuTIET/kalpi-capital)
 
 ## 📋 Table of Contents
 
@@ -89,7 +90,7 @@ A high-performance real-time financial data pipeline with Angel Broking integrat
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/DeepanshuTIET/kalpi-capital.git
 cd kalpi-capital
 
 # Create virtual environment
@@ -115,7 +116,7 @@ python main.py
 
 1. **Clone Repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/DeepanshuTIET/kalpi-capital.git
    cd kalpi-capital
    ```
 
@@ -252,7 +253,7 @@ const ws = new WebSocket('ws://localhost:8000/ws');
 #### Unsubscribe from Symbol
 ```json
 {
-  "type": "unsubscribe",
+  "type": "unsubscribe", 
   "symbol": "RELIANCE",
   "exchange": "NSE"
 }
@@ -430,7 +431,7 @@ We welcome contributions! Please see our contributing guidelines:
 
 ### Getting Started
 
-1. Fork the repository
+1. Fork the repository: [https://github.com/DeepanshuTIET/kalpi-capital](https://github.com/DeepanshuTIET/kalpi-capital)
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make your changes
 4. Add tests for new functionality
@@ -459,8 +460,8 @@ A: Ensure sufficient disk space and write permissions.
 
 ### Getting Help
 
-- **Issues**: Report bugs on GitHub Issues
-- **Discussions**: Join our GitHub Discussions
+- **Issues**: Report bugs on [GitHub Issues](https://github.com/DeepanshuTIET/kalpi-capital/issues)
+- **Discussions**: Join our [GitHub Discussions](https://github.com/DeepanshuTIET/kalpi-capital/discussions)
 - **Documentation**: Check the `/docs` endpoint
 
 ## 📄 License
