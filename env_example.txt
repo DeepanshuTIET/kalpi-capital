@@ -1,0 +1,28 @@
+# Angel Broker API Configuration
+# Copy these to your .env file and fill with actual values
+BROKER_API_KEY=your_angel_api_key_here
+
+# Note: Angel One only requires API_KEY, no API_SECRET needed
+# Get your API key from: https://smartapi.angelbroking.com/
+# Go to "My Profile" > "API" section
+
+# Server Configuration (Optional)
+HOST=0.0.0.0
+PORT=8000
+LOG_LEVEL=info
+RELOAD=false
+
+# Database Configuration (Optional)
+DB_PATH=prices.db
+DB_CLEANUP_DAYS=30
+
+# Angel Broker Streaming Configuration
+# These are the values needed for live streaming (not in .env, entered via web interface):
+# - CLIENT_CODE: Your Angel broker client code (like AB12345)
+# - PIN: Your 4-6 digit trading PIN
+# - TOTP: 6-digit TOTP code from your authenticator app
+
+# Example values (DO NOT use these actual values):
+# CLIENT_CODE=AB12345
+# PIN=1234
+# TOTP=123456

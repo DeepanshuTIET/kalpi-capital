@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="corporate">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalpi Capital - Real-time Price System</title>
+    
+    <!-- Tailwind CSS + DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Chart.js for price charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .price-card {
+            transition: all 0.3s ease;
+        }
+        
+        .price-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        .number-counter {
+            font-variant-numeric: tabular-nums;
+        }
+    </style>
+</head>
+
+<body class="bg-base-100" x-data="priceSystem()">
+    <!-- Navigation -->
+    <div class="navbar bg-base-100 shadow-lg">
+        <div class="navbar-start">
+            <div class="dropdown">
+                <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path>
+                    </svg>
+                </div>
+                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#api">API</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                </ul>
+            </div>
+            <a class="btn btn-ghost text-xl font-bold">
+                <i class="fas fa-chart-line text-primary"></i>
+                Kalpi Capital
+            </a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1">
+                <li><a href="#features" class="hover:text-primary">Features</a></li>
+                <li><a href="#api" class="hover:text-primary">API</a></li>
+                <li><a href="#dashboard" class="hover:text-primary">Dashboard</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end">
+            <div class="flex items-center gap-2 mr-4">
+                <div class="badge badge-success gap-2">
+                    <div class="w-2 h-2 bg-success rounded-full pulse-dot"></div>
+                    <span x-text="connectionStatus"></span>
+                </div>
+            </div>
+            <a href="/docs" class="btn btn-primary">
+                <i class="fas fa-book"></i>
+                API Docs
+            </a>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero min-h-screen gradient-bg">
+        <div class="hero-content text-center text-white">
+            <div class="max-w-md">
+                <h1 class="mb-5 text-5xl font-bold">Real-time Price System</h1>
+                <p class="mb-5 text-lg opacity-90">
+                    Professional-grade financial data pipeline with Angel broker integration. 
+                    Get live market data, historical prices, and real-time analytics.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button @click="scrollToSection('dashboard')" class="btn btn-primary btn-lg">
+                        <i class="fas fa-chart-area"></i>
+                        View Dashboard
+                    </button>
+                    <button @click="scrollToSection('api')" class="btn btn-outline btn-lg border-white text-white hover:bg-white hover:text-gray-800">
+                        <i class="fas fa-code"></i>
+                        API Reference
+                    </button>
+                </div>
+                
+                <!-- System Stats -->
+                <div class="stats stats-vertical lg:stats-horizontal shadow-lg mt-8 bg-white text-gray-800">
+                    <div class="stat">
+                        <div class="stat-figure text-primary">
+                            <i class="fas fa-database text-2xl"></i>
+                        </div>
+                        <div class="stat-title">Live Symbols</div>
+                        <div class="stat-value text-primary number-counter" x-text="watchlist.length"></div>
+                        <div class="stat-desc">Real data only</div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-figure text-secondary">
+                            <i class="fas fa-satellite-dish text-2xl"></i>
+                        </div>
+                        <div class="stat-title">Streaming</div>
+                        <div class="stat-value text-secondary text-sm" x-text="streamingActive ? 'Active' : 'Inactive'"></div>
+                        <div class="stat-desc" x-text="streamingActive ? 'Angel Broker' : 'Not Connected'"></div>
+                    </div>
+                    
+                    <div class="stat">
+                        <div class="stat-figure text-accent">
+                            <i class="fas fa-chart-line text-2xl"></i>
+                        </div>
+                        <div class="stat-title">Data Mode</div>
+                        <div class="stat-value text-accent text-sm">Real-time</div>
+                        <div class="stat-desc">No simulation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-base-100">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12">Powerful Features</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Real-time Streaming -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-primary text-3xl mb-4">
+                            <i class="fas fa-stream"></i>
+                        </div>
+                        <h3 class="card-title">Real-time Streaming</h3>
+                        <p>Live price data from Angel broker via WebSocket with sub-second latency.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-primary">WebSocket</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Efficient Storage -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-secondary text-3xl mb-4">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3 class="card-title">Efficient Storage</h3>
+                        <p>OHLC data stored in DuckDB with optimized queries and automatic indexing.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-secondary">DuckDB</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REST API -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-accent text-3xl mb-4">
+                            <i class="fas fa-api"></i>
+                        </div>
+                        <h3 class="card-title">REST API</h3>
+                        <p>Comprehensive endpoints for current prices, historical data, and market status.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-accent">FastAPI</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto-Reconnection -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-warning text-3xl mb-4">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <h3 class="card-title">Auto-Reconnection</h3>
+                        <p>Robust error handling with automatic reconnection and exponential backoff.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-warning">Resilient</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Market Analytics -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-info text-3xl mb-4">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <h3 class="card-title">Market Analytics</h3>
+                        <p>Comprehensive monitoring and analytics with real-time statistics.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-info">Analytics</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scalable Architecture -->
+                <div class="card bg-base-200 shadow-xl price-card">
+                    <div class="card-body">
+                        <div class="text-success text-3xl mb-4">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </div>
+                        <h3 class="card-title">Scalable Architecture</h3>
+                        <p>Designed for high-throughput price data with connection pooling.</p>
+                        <div class="card-actions justify-end">
+                            <div class="badge badge-success">Scalable</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Section -->
+    <section id="api" class="py-20 bg-base-200">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12">API Endpoints</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- REST Endpoints -->
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="fas fa-server text-primary"></i>
+                            REST API
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Method</th>
+                                        <th>Endpoint</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge badge-success badge-sm">GET</span></td>
+                                        <td><code>/health</code></td>
+                                        <td>Health check</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-success badge-sm">GET</span></td>
+                                        <td><code>/price/{symbol}</code></td>
+                                        <td>Current price</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-success badge-sm">GET</span></td>
+                                        <td><code>/history/{symbol}</code></td>
+                                        <td>Historical data</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-success badge-sm">GET</span></td>
+                                        <td><code>/market/status</code></td>
+                                        <td>Market statistics</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-warning badge-sm">POST</span></td>
+                                        <td><code>/streaming/start</code></td>
+                                        <td>Start streaming</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WebSocket Endpoints -->
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h3 class="card-title">
+                            <i class="fas fa-plug text-secondary"></i>
+                            WebSocket API
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Real-time price updates via WebSocket</span>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold mb-2">Endpoints:</h4>
+                                <ul class="list-disc list-inside space-y-1 text-sm">
+                                    <li><code>ws://localhost:8000/ws</code> - Price updates</li>
+                                    <li><code>ws://localhost:8000/ws/market</code> - Market status</li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold mb-2">Message Types:</h4>
+                                <ul class="list-disc list-inside space-y-1 text-sm">
+                                    <li>Subscribe: <code>{"type": "subscribe", "symbol": "RELIANCE"}</code></li>
+                                    <li>Unsubscribe: <code>{"type": "unsubscribe", "symbol": "RELIANCE"}</code></li>
+                                    <li>Ping: <code>{"type": "ping"}</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="py-20 bg-base-100">
+        <div class="container mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12">Live Dashboard</h2>
+            
+            <!-- Price Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Show message when no data available -->
+                <div x-show="watchlist.length === 0" class="col-span-full">
+                    <div class="card bg-base-200 shadow-xl">
+                        <div class="card-body text-center">
+                            <div class="text-6xl mb-4">📊</div>
+                            <h3 class="text-xl font-bold mb-2">No Live Data Available</h3>
+                            <p class="text-base-content/70 mb-4">
+                                Start Angel broker streaming to see real-time prices here.
+                            </p>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Only real Angel broker data will be displayed - no simulated prices.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price cards when data is available -->
+                <template x-for="symbol in watchlist" :key="symbol.symbol">
+                    <div class="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-xl price-card">
+                        <div class="card-body">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold" x-text="symbol.symbol"></h3>
+                                    <p class="text-sm opacity-70" x-text="symbol.exchange"></p>
+                                    <div class="badge badge-success badge-sm" x-show="lastRealUpdate[symbol.symbol]">
+                                        <div class="w-2 h-2 bg-success rounded-full pulse-dot mr-1"></div>
+                                        Live
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold number-counter" 
+                                         x-text="formatPrice(symbol.ltp)" 
+                                         :class="symbol.change > 0 ? 'text-success' : symbol.change < 0 ? 'text-error' : 'text-base-content'">
+                                    </div>
+                                    <div class="text-sm" 
+                                         x-text="formatChange(symbol.change)" 
+                                         :class="symbol.change > 0 ? 'text-success' : symbol.change < 0 ? 'text-error' : 'text-base-content'">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div>Open: <span x-text="formatPrice(symbol.open)"></span></div>
+                                <div>High: <span x-text="formatPrice(symbol.high)" class="text-success"></span></div>
+                                <div>Low: <span x-text="formatPrice(symbol.low)" class="text-error"></span></div>
+                                <div>Vol: <span x-text="formatVolume(symbol.volume)"></span></div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <canvas :id="'chart-' + symbol.symbol.toLowerCase()" width="100" height="40"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Streaming Controls -->
+            <div class="card bg-base-200 shadow-xl">
+                <div class="card-body">
+                    <h3 class="card-title">
+                        <i class="fas fa-cog text-primary"></i>
+                        Streaming Controls
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Start Streaming -->
+                        <div class="space-y-4">
+                            <h4 class="font-semibold">Start Live Streaming</h4>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Client Code</span>
+                                </label>
+                                <input type="text" x-model="streamingConfig.client_code" 
+                                       placeholder="Angel client code" class="input input-bordered" />
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Trading PIN</span>
+                                </label>
+                                <input type="password" x-model="streamingConfig.pin" 
+                                       placeholder="Trading PIN" class="input input-bordered" />
+                            </div>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">TOTP Code</span>
+                                </label>
+                                <input type="text" x-model="streamingConfig.totp" 
+                                       placeholder="6-digit TOTP code" class="input input-bordered" />
+                            </div>
+                            <button @click="startStreaming()" 
+                                    :disabled="streamingActive" 
+                                    class="btn btn-primary w-full">
+                                <i class="fas fa-play" x-show="!streamingActive"></i>
+                                <i class="fas fa-spinner fa-spin" x-show="streamingActive"></i>
+                                <span x-text="streamingActive ? 'Streaming Active' : 'Start Streaming'"></span>
+                            </button>
+                        </div>
+
+                        <!-- WebSocket Connection -->
+                        <div class="space-y-4">
+                            <h4 class="font-semibold">WebSocket Connection</h4>
+                            <div class="alert" :class="wsConnected ? 'alert-success' : 'alert-warning'">
+                                <i class="fas" :class="wsConnected ? 'fa-check-circle' : 'fa-exclamation-triangle'"></i>
+                                <span x-text="wsConnected ? 'Connected to WebSocket' : 'WebSocket Disconnected'"></span>
+                            </div>
+                            
+                            <button @click="connectWebSocket()" 
+                                    :disabled="wsConnected" 
+                                    class="btn btn-secondary w-full">
+                                <i class="fas fa-plug"></i>
+                                Connect WebSocket
+                            </button>
+                            
+                            <div class="stats shadow w-full">
+                                <div class="stat">
+                                    <div class="stat-title">Messages Received</div>
+                                    <div class="stat-value text-sm number-counter" x-text="wsStats.messages"></div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-title">Last Update</div>
+                                    <div class="stat-value text-xs" x-text="formatTime(wsStats.lastUpdate)"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer footer-center p-10 bg-base-200 text-base-content rounded">
+        <nav class="grid grid-flow-col gap-4">
+            <a href="/docs" class="link link-hover">API Documentation</a>
+            <a href="/redoc" class="link link-hover">ReDoc</a>
+            <a href="/health" class="link link-hover">Health Check</a>
+            <a href="/market/status" class="link link-hover">Market Status</a>
+        </nav>
+        <nav>
+            <div class="grid grid-flow-col gap-4">
+                <i class="fab fa-github text-2xl cursor-pointer hover:text-primary"></i>
+                <i class="fab fa-linkedin text-2xl cursor-pointer hover:text-primary"></i>
+                <i class="fas fa-envelope text-2xl cursor-pointer hover:text-primary"></i>
+            </div>
+        </nav>
+        <aside>
+            <p>Copyright © 2024 - Kalpi Capital Real-time Price System</p>
+        </aside>
+    </footer>
+
+    <script>
+        function priceSystem() {
+            return {
+                // System Status
+                connectionStatus: 'Live',
+                marketStats: {},
+                streamingActive: false,
+                wsConnected: false,
+                lastRealUpdate: {}, // Track last real data update per symbol
+                
+                // Streaming Configuration
+                streamingConfig: {
+                    client_code: '',
+                    pin: '',
+                    totp: ''
+                },
+                
+                // WebSocket
+                websocket: null,
+                wsStats: {
+                    messages: 0,
+                    lastUpdate: null
+                },
+                
+                // Watchlist - starts empty, populated from real data
+                watchlist: [],
+                
+                // Default symbols to subscribe to when streaming starts
+                defaultSymbols: [
+                    { symbol: 'RELIANCE', exchange: 'NSE' },
+                    { symbol: 'TCS', exchange: 'NSE' },
+                    { symbol: 'INFY', exchange: 'NSE' },
+                    { symbol: 'ICICIBANK', exchange: 'NSE' },
+                    { symbol: 'SBIN', exchange: 'NSE' },
+                    { symbol: 'NIFTY', exchange: 'NSE_INDEX' }
+                ],
+                
+                // Initialize
+                init() {
+                    this.fetchMarketStats();
+                    this.loadWatchlistFromAPI();
+                    
+                    // Update market stats every 30 seconds
+                    setInterval(() => {
+                        this.fetchMarketStats();
+                    }, 30000);
+                    
+                    // Check for connection status
+                    setInterval(() => {
+                        this.checkConnectionStatus();
+                    }, 5000);
+                },
+                
+                // API Methods
+                async fetchMarketStats() {
+                    try {
+                        const response = await fetch('/market/status');
+                        if (response.ok) {
+                            this.marketStats = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error fetching market stats:', error);
+                    }
+                },
+                
+                async startStreaming() {
+                    if (!this.streamingConfig.client_code || !this.streamingConfig.pin || !this.streamingConfig.totp) {
+                        alert('Please fill in all streaming configuration fields');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch('/streaming/start', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(this.streamingConfig)
+                        });
+                        
+                        if (response.ok) {
+                            this.streamingActive = true;
+                            console.log('Angel broker streaming started successfully');
+                            
+                            // Connect WebSocket and subscribe to symbols
+                            if (!this.wsConnected) {
+                                this.connectWebSocket();
+                            } else {
+                                this.subscribeToSymbols();
+                            }
+                        } else {
+                            const error = await response.json();
+                            alert('Failed to start streaming: ' + (error.detail || error.message));
+                        }
+                    } catch (error) {
+                        alert('Error starting streaming: ' + error.message);
+                    }
+                },
+                
+                // Subscribe to all watchlist symbols
+                subscribeToSymbols() {
+                    if (this.websocket && this.wsConnected) {
+                        this.watchlist.forEach(item => {
+                            this.websocket.send(JSON.stringify({
+                                type: 'subscribe',
+                                symbol: item.symbol,
+                                exchange: item.exchange
+                            }));
+                        });
+                        console.log(`Subscribed to ${this.watchlist.length} symbols`);
+                    }
+                },
+                
+                // WebSocket Methods
+                connectWebSocket() {
+                    if (this.websocket) {
+                        this.websocket.close();
+                    }
+                    
+                    try {
+                        const wsUrl = `ws://${window.location.host}/ws`;
+                        this.websocket = new WebSocket(wsUrl);
+                        
+                        this.websocket.onopen = () => {
+                            this.wsConnected = true;
+                            console.log('WebSocket connected');
+                            
+                            // Only subscribe to symbols if streaming is active
+                            if (this.streamingActive && this.watchlist.length > 0) {
+                                this.subscribeToSymbols();
+                            }
+                        };
+                        
+                        this.websocket.onmessage = (event) => {
+                            this.wsStats.messages++;
+                            this.wsStats.lastUpdate = new Date();
+                            
+                            try {
+                                const data = JSON.parse(event.data);
+                                if (data.type === 'price_update') {
+                                    this.updateWatchlistPrice(data);
+                                }
+                            } catch (error) {
+                                console.error('Error parsing WebSocket message:', error);
+                            }
+                        };
+                        
+                        this.websocket.onclose = () => {
+                            this.wsConnected = false;
+                            console.log('WebSocket disconnected');
+                        };
+                        
+                        this.websocket.onerror = (error) => {
+                            console.error('WebSocket error:', error);
+                            this.wsConnected = false;
+                        };
+                        
+                    } catch (error) {
+                        console.error('Error connecting WebSocket:', error);
+                    }
+                },
+                
+                updateWatchlistPrice(data) {
+                    const index = this.watchlist.findIndex(item => 
+                        item.symbol === data.symbol && item.exchange === data.exchange
+                    );
+                    
+                    if (index !== -1) {
+                        const oldPrice = this.watchlist[index].ltp;
+                        
+                        // Mark this as real data update
+                        this.lastRealUpdate[data.symbol] = Date.now();
+                        
+                        // Update with real data
+                        this.watchlist[index] = {
+                            ...this.watchlist[index],
+                            ltp: data.data.ltp,
+                            volume: data.data.volume || this.watchlist[index].volume,
+                            high: Math.max(this.watchlist[index].high, data.data.ltp),
+                            low: Math.min(this.watchlist[index].low || data.data.ltp, data.data.ltp),
+                            change: data.data.ltp - this.watchlist[index].open,
+                            lastUpdate: new Date().toISOString()
+                        };
+                        
+                        // Update chart
+                        this.updateChart(data.symbol.toLowerCase(), data.data.ltp);
+                        
+                        console.log(`Real-time update for ${data.symbol}: ₹${data.data.ltp}`);
+                    } else {
+                        // Add new symbol to watchlist if not present
+                        this.addToWatchlist({
+                            symbol: data.symbol,
+                            exchange: data.exchange,
+                            ltp: data.data.ltp,
+                            volume: data.data.volume || 0,
+                            open: data.data.ltp, // Use current price as open if no open data
+                            high: data.data.ltp,
+                            low: data.data.ltp,
+                            change: 0
+                        });
+                        
+                        // Create chart for new symbol
+                        setTimeout(() => {
+                            this.createChart(data.symbol.toLowerCase());
+                        }, 100);
+                    }
+                },
+                
+                // Load watchlist data from API
+                async loadWatchlistFromAPI() {
+                    try {
+                        // Load current prices for default symbols
+                        for (const symbolInfo of this.defaultSymbols) {
+                            const response = await fetch(`/price/${symbolInfo.symbol}?exchange=${symbolInfo.exchange}`);
+                            if (response.ok) {
+                                const priceData = await response.json();
+                                this.addToWatchlist(priceData);
+                            }
+                        }
+                        
+                        // Initialize charts after loading data
+                        setTimeout(() => {
+                            this.initializeCharts();
+                        }, 1000);
+                        
+                    } catch (error) {
+                        console.error('Error loading watchlist data:', error);
+                        this.connectionStatus = 'Error';
+                    }
+                },
+                
+                // Add symbol to watchlist
+                addToWatchlist(priceData) {
+                    const existingIndex = this.watchlist.findIndex(item => 
+                        item.symbol === priceData.symbol && item.exchange === priceData.exchange
+                    );
+                    
+                    if (existingIndex === -1) {
+                        this.watchlist.push({
+                            symbol: priceData.symbol,
+                            exchange: priceData.exchange,
+                            ltp: priceData.ltp || 0,
+                            open: priceData.open || 0,
+                            high: priceData.high || 0,
+                            low: priceData.low || 0,
+                            volume: priceData.volume || 0,
+                            change: priceData.change || 0
+                        });
+                    }
+                },
+                
+                // Check connection status
+                checkConnectionStatus() {
+                    if (this.wsConnected) {
+                        this.connectionStatus = 'Live';
+                    } else if (this.streamingActive) {
+                        this.connectionStatus = 'Streaming';
+                    } else {
+                        this.connectionStatus = 'Disconnected';
+                    }
+                },
+                
+                // Chart Methods
+                initializeCharts() {
+                    if (this.watchlist.length > 0) {
+                        this.watchlist.forEach(item => {
+                            this.createChart(item.symbol.toLowerCase());
+                        });
+                    }
+                },
+                
+                createChart(symbol) {
+                    const canvas = document.getElementById(`chart-${symbol}`);
+                    if (!canvas) return;
+                    
+                    const ctx = canvas.getContext('2d');
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array(20).fill(''),
+                            datasets: [{
+                                data: Array(20).fill(0).map(() => Math.random() * 100),
+                                borderColor: '#3B82F6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                x: { display: false },
+                                y: { display: false }
+                            },
+                            elements: {
+                                point: { radius: 0 }
+                            }
+                        }
+                    });
+                    
+                    // Store chart reference
+                    window[`chart_${symbol}`] = chart;
+                },
+                
+                updateChart(symbol, price) {
+                    const chart = window[`chart_${symbol}`];
+                    if (!chart) return;
+                    
+                    chart.data.datasets[0].data.shift();
+                    chart.data.datasets[0].data.push(price);
+                    chart.update('none');
+                },
+                
+                // Utility Methods
+                formatPrice(price) {
+                    return parseFloat(price || 0).toFixed(2);
+                },
+                
+                formatChange(change) {
+                    const formatted = parseFloat(change || 0).toFixed(2);
+                    return change >= 0 ? `+${formatted}` : formatted;
+                },
+                
+                formatVolume(volume) {
+                    if (volume >= 1000000) {
+                        return (volume / 1000000).toFixed(1) + 'M';
+                    } else if (volume >= 1000) {
+                        return (volume / 1000).toFixed(1) + 'K';
+                    }
+                    return volume.toString();
+                },
+                
+                formatNumber(num) {
+                    return new Intl.NumberFormat().format(num || 0);
+                },
+                
+                formatTime(timestamp) {
+                    if (!timestamp) return 'N/A';
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString();
+                },
+                
+                scrollToSection(sectionId) {
+                    document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
